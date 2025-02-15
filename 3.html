@@ -1,13 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<title>three.js webgl - geometry - cube</title>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<!-- <link type="text/css" rel="stylesheet" href="main.css"> -->
-	</head>
-	<body>
-		<script type="importmap">
+
+<head>
+    <title>three.js webgl - geometry - cube</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <!-- <link type="text/css" rel="stylesheet" href="main.css"> -->
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+    <div id="rect-rt"><span class="mono"></span></div>
+
+    <script type="importmap">
             {
               "imports": {
                 "three": "https://cdn.jsdelivr.net/npm/three@<version>/build/three.module.js",
@@ -15,66 +21,181 @@
               }
             }
           </script>
-          <script src="https://threejs.org/build/three.js"></script> 
+    <script src="https://threejs.org/build/three.js"></script>
 
-		<script type="module">
+    <script>
+        const RENDER_PIXELS_AMOUNT = 128;
+        const RENDER_PIXELS_W = RENDER_PIXELS_AMOUNT;
+        const RENDER_PIXELS_H = RENDER_PIXELS_AMOUNT;
 
-            import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.117.1/build/three.module.js';
+        var bright = "□░▒▩▓███";
+        
+        var alphabetpower = 0;
+        
+        const specific = {
+            'lt': '▘',
+            'rt': '▝',
+            'lb': '▖',
+            'rb': '▖',
+            'dlt': '▚',
+            'drt': '▞',
+            'b0': ' ',
+            'b1': '░',
+            'b2': '▓',
+            'b3': '█',
+        };
+        //get 8*8 array of pixels like [0;1]
+        //returns [lt, rt, lb, rb]
+        function draw(arr) {
+            const sum = [0, 0, 0, 0]
+            for (var i = 0; i < 8; i++) { // i=y
+                for (var j = 0; j < 8; j++) { // j=x
+                    var i_in_l = !(i < 4) ;
+                    var j_in_l = !(j < 4) ;
+                    //0: i=0 j=0; 1: i=0 j=1; 2: i=1 j=0; 3: i=1 j=1
+                    sum[(i_in_l * 2) + j_in_l] += arr[i][j] / ((8 * 8) / 4)
+                }
+            }
+            const res = sum.map(s => bright.charAt(alphabetpower - Math.round(s * alphabetpower)))
+            // if (Math.abs(sum[0] - sum[3]) < 0.2 && sum[0] < 0.15) { res[0] = '▚'; res[3] = '▚'; }
+            // if (Math.abs(sum[1] - sum[2]) < 0.2 && sum[1] < 0.15) { res[1] = '▞'; res[2] = '▞'; }
+            const same = new Array();
+            for(var i=0; i<4; i++){same.push(new Array(i));}
+
+            for(var i=0; i<4; i++){
+                for(var j=0; j<4-i; j++){
+                    if(Math.abs(sum[i]-sum[j])<0.2 && sum[i]<0.15){
+                        same[i][j] = true;
+                        same[j][i] = true;
+                    }else{
+                        same[i][j] = false;
+                        same[j][i] = false;
+                    }
+                }
+            }
+            
 
 
-			let camera, scene, renderer;
-			let mesh;
+            return res
+        }
 
-			init();
+        function draw_all(pixels) {
+            const res = [...Array(RENDER_PIXELS_AMOUNT / 4)].map(e => Array(RENDER_PIXELS_AMOUNT / 4).fill(0));
+            for (var i = 0; i < pixels.length; i += 8) {
+                for (var j = 0; j < pixels[i].length; j += 8) {
+                    let section = pixels.slice(i, i + 8 + 1).map(i_1 => i_1.slice(j, j + 8 + 1))
+                    const result = draw(section)
+                    res[i / 4][j / 4] = result[0]
+                    res[i / 4][(j / 4) + 1] = result[1]
+                    res[(i / 4) + 1][j / 4] = result[2]
+                    res[(i / 4) + 1][(j / 4) + 1] = result[3]
+                }
+            }
+            return res;
+        }
+    </script>
 
-			function init() {
+    <script type="module">
 
-				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 100 );
-				camera.position.z = 2;
+        import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.117.1/build/three.module.js';
 
-				scene = new THREE.Scene();
-                var loader = new THREE.TextureLoader()
 
-				const texture = loader.load( 'TEX64.png' );
-				texture.colorSpace = THREE.SRGBColorSpace;
+        let camera, scene, renderer;
+        let mesh;
+        var rotx, roty, rotz;
 
-				const geometry = new THREE.BoxGeometry();
-				const material = new THREE.MeshBasicMaterial( { map: texture } );
+        init();
 
-				mesh = new THREE.Mesh( geometry, material );
-				scene.add( mesh );
+        function init() {
+            const max = 5;
+            // rotx = 0.005 * (Math.floor(Math.random() * max) - 2);
+            // roty = 0.005 * (Math.floor(Math.random() * max) - 2);
+            // rotz = 0.005 * (Math.floor(Math.random() * max) - 2);
+            rotx = 0.0; roty=0.00; rotz=0;
+            if (rotx == 0 && roty == 0 && rotz == 0) {
+                // rotx = 0.005;
+            }
 
-				renderer = new THREE.WebGLRenderer( { antialias: true } );
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				renderer.setAnimationLoop( animate );
-				document.body.appendChild( renderer.domElement );
+            camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+            camera.position.z = 2;
 
-				//
+            scene = new THREE.Scene();
+            var loader = new THREE.TextureLoader()
 
-				window.addEventListener( 'resize', onWindowResize );
+            const texture = loader.load('https://ressiwage.github.io/LEARN-demo-rt/logosd37.jpg');
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.flipY=false;
 
-			}
+            const geometry = new THREE.BoxGeometry();
+            const material = new THREE.MeshBasicMaterial({ map: texture });
 
-			function onWindowResize() {
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.rotation.y = Math.PI;
+            // mesh.rotation.x = -0.3
+            scene.add(mesh);
 
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(64, 64);
+            renderer.setAnimationLoop(animate);
+            // document.body.appendChild(renderer.domElement);
 
-				renderer.setSize( window.innerWidth, window.innerHeight );
+            // window.addEventListener( 'resize', onWindowResize );
 
-			}
+        }
 
-			function animate() {
+        function onWindowResize() {
 
-				mesh.rotation.x += 0.005;
-				mesh.rotation.y += 0.01;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
 
-				renderer.render( scene, camera );
+            renderer.setSize(window.innerWidth, window.innerHeight);
 
-			}
+        }
+        var counter=0;
+        function animate() {
+            mesh.rotation.x += rotx;
+            mesh.rotation.y += roty;
+            mesh.rotation.z += rotz;
+            const rt = new THREE.WebGLRenderTarget(RENDER_PIXELS_AMOUNT, RENDER_PIXELS_AMOUNT);
 
-		</script>
+            renderer.render(scene, camera, rt);
 
-	</body>
+            const buffer = new Uint8Array(RENDER_PIXELS_AMOUNT * RENDER_PIXELS_AMOUNT * 4);
+            renderer.readRenderTargetPixels(rt, 0, 0, RENDER_PIXELS_AMOUNT, RENDER_PIXELS_AMOUNT, buffer);
+            const luma = new Array(RENDER_PIXELS_AMOUNT * RENDER_PIXELS_AMOUNT);
+            for (var i = 0; i < buffer.length; i += 4) {
+                luma[i / 4] = parseFloat((buffer[i] + buffer[i + 1] + buffer[i + 2])) / (3 * 255);
+            }
+            console.log(luma)
+            const luma2d = [];
+            while (luma.length) luma2d.push(luma.splice(0, RENDER_PIXELS_AMOUNT));
+            console.log(luma2d);
+            const txtluma = draw_all(luma2d);
+            console.log(txtluma);
+            var csv = txtluma
+                .map((item) => {
+
+                    // Here item refers to a row in that 2D array
+                    var row = item;
+
+                    // Now join the elements of row with "," using join function
+                    return "<span>"+row.join("")+"</span>";
+                }) // At this point we have an array of strings
+                .join("");
+
+            // Join the array of strings with "\n"
+            console.log(csv);
+            document.getElementById("rect-rt").getElementsByTagName('span')[0].innerHTML = csv.replace('\n', '&#13;&#10;');
+            if (counter++%10==0 && alphabetpower<bright.length-1) {
+                alphabetpower++;
+            }
+            if(alphabetpower==bright.length-1){
+                roty=0.005;
+            }
+        }
+
+    </script>
+</body>
+
 </html>
