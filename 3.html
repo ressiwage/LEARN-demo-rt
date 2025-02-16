@@ -57,14 +57,17 @@
                 }
             }
             const res = sum.map(s => bright.charAt(alphabetpower - Math.round(s * alphabetpower)))
-            // if (Math.abs(sum[0] - sum[3]) < 0.2 && sum[0] < 0.15) { res[0] = '▚'; res[3] = '▚'; }
-            // if (Math.abs(sum[1] - sum[2]) < 0.2 && sum[1] < 0.15) { res[1] = '▞'; res[2] = '▞'; }
+            // if (
+            //     Math.abs(sum[0] - sum[3]) < 0.2 &&  sum[0] < 0.15 &&
+
+            // ) { res[1] = '▖'; res[2] = '▝'; }
+            // if (Math.abs(sum[1] - sum[2]) < 0.2 && 0.1<sum[1] && sum[1] < 0.15) { res[0] = '▗'; res[3] = '▘'; }
             const same = new Array();
-            for(var i=0; i<4; i++){same.push(new Array(i));}
+            for(var i=0; i<4; i++){same.push(new Array(4));}
 
             for(var i=0; i<4; i++){
                 for(var j=0; j<4-i; j++){
-                    if(Math.abs(sum[i]-sum[j])<0.2 && sum[i]<0.15){
+                    if(Math.abs(sum[i]-sum[j])<0.2){
                         same[i][j] = true;
                         same[j][i] = true;
                     }else{
@@ -73,8 +76,16 @@
                     }
                 }
             }
+            // console.log(same);
+            if (same[0][3] && same[1][2] && Math.abs(sum[0] - sum[1])>0.3){
+                if(sum[0]<0.2){
+                    res[1] = '▖'; res[2] = '▝';
+                }
+                if(sum[1]<0.2){
+                    res[0] = '▗'; res[3] = '▘';
+                }
+            }
             
-
 
             return res
         }
@@ -167,12 +178,12 @@
             for (var i = 0; i < buffer.length; i += 4) {
                 luma[i / 4] = parseFloat((buffer[i] + buffer[i + 1] + buffer[i + 2])) / (3 * 255);
             }
-            console.log(luma)
+            // console.log(luma)
             const luma2d = [];
             while (luma.length) luma2d.push(luma.splice(0, RENDER_PIXELS_AMOUNT));
-            console.log(luma2d);
+            // console.log(luma2d);
             const txtluma = draw_all(luma2d);
-            console.log(txtluma);
+            // console.log(txtluma);
             var csv = txtluma
                 .map((item) => {
 
@@ -185,7 +196,7 @@
                 .join("");
 
             // Join the array of strings with "\n"
-            console.log(csv);
+            // console.log(csv);
             document.getElementById("rect-rt").getElementsByTagName('span')[0].innerHTML = csv.replace('\n', '&#13;&#10;');
             if (counter++%10==0 && alphabetpower<bright.length-1) {
                 alphabetpower++;
